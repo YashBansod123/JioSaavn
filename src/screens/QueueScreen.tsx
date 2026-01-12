@@ -2,8 +2,11 @@ import React, { useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
 import { useQueueStore } from "../store/queueStore";
 import { usePlayerStore } from "../store/playerStore";
-import { getBestImage } from "../api/saavn";
+import { getArtistName, getBestImage } from "../api/saavn";
 import { Ionicons } from "@expo/vector-icons";
+
+import { useThemeStore } from "../store/themeStore";
+import { themeColors } from "../theme/theme";
 
 export default function QueueScreen({ navigation }: any) {
   const queue = useQueueStore((s) => s.queue);
@@ -16,13 +19,16 @@ export default function QueueScreen({ navigation }: any) {
 
   const playSong = usePlayerStore((s) => s.playSong);
 
+  const isDark = useThemeStore((s) => s.isDark);
+  const colors = isDark ? themeColors.dark : themeColors.light;
+
   useEffect(() => {
     loadQueue();
   }, []);
 
   return (
-    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "800" }}>Queue</Text>
+    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16, backgroundColor: colors.bg }}>
+      <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>Queue</Text>
 
       <FlatList
         style={{ marginTop: 16 }}
@@ -39,38 +45,50 @@ export default function QueueScreen({ navigation }: any) {
                 await playSong(item);
                 navigation.navigate("Player");
               }}
+              activeOpacity={0.9}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 padding: 10,
                 borderRadius: 14,
-                backgroundColor: isCurrent ? "#ffe9cc" : "#fff",
+                backgroundColor: isCurrent
+                  ? (isDark ? "#2a1a00" : "#ffe9cc")
+                  : colors.card,
                 marginBottom: 10,
                 elevation: 1,
+                borderWidth: 1,
+                borderColor: colors.border,
               }}
             >
               <Image
                 source={{ uri: getBestImage(item) }}
-                style={{ width: 50, height: 50, borderRadius: 12, marginRight: 10 }}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 12,
+                  marginRight: 10,
+                  backgroundColor: isDark ? "#111" : "#eee",
+                }}
               />
 
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: "800" }} numberOfLines={1}>
+                <Text style={{ fontWeight: "900", color: colors.text }} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={{ color: "#666", fontSize: 12 }} numberOfLines={1}>
-                  {item.primaryArtists || "Unknown Artist"}
+
+                <Text style={{ color: colors.subText, fontSize: 12 }} numberOfLines={1}>
+                  {getArtistName(item)}
                 </Text>
               </View>
 
               {/* reorder + remove */}
               <View style={{ gap: 6 }}>
                 <TouchableOpacity onPress={() => moveUp(index)}>
-                  <Ionicons name="arrow-up" size={20} color="#111" />
+                  <Ionicons name="arrow-up" size={20} color={colors.text} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => moveDown(index)}>
-                  <Ionicons name="arrow-down" size={20} color="#111" />
+                  <Ionicons name="arrow-down" size={20} color={colors.text} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => removeFromQueue(index)}>
@@ -81,7 +99,7 @@ export default function QueueScreen({ navigation }: any) {
           );
         }}
         ListEmptyComponent={
-          <Text style={{ marginTop: 40, textAlign: "center", color: "#666" }}>
+          <Text style={{ marginTop: 40, textAlign: "center", color: colors.subText }}>
             Queue empty. Play a song to build queue.
           </Text>
         }

@@ -6,7 +6,10 @@ import { useNavigation } from "@react-navigation/native";
 
 import { usePlayerStore } from "../store/playerStore";
 import { useQueueStore } from "../store/queueStore";
-import { getBestImage } from "../api/saavn";
+import { getBestImage, getArtistName } from "../api/saavn";
+
+import { useThemeStore } from "../store/themeStore";
+import { themeColors } from "../theme/theme";
 
 function formatTime(ms: number) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -18,11 +21,14 @@ function formatTime(ms: number) {
 export default function PlayerScreen() {
   const navigation: any = useNavigation();
 
+  // theme
+  const isDark = useThemeStore((s) => s.isDark);
+  const colors = isDark ? themeColors.dark : themeColors.light;
+
   // player store
   const song = usePlayerStore((s) => s.currentSong);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const toggle = usePlayerStore((s) => s.togglePlayPause);
-  const stop = usePlayerStore((s) => s.stop);
   const playSong = usePlayerStore((s) => s.playSong);
 
   // seekbar
@@ -37,8 +43,15 @@ export default function PlayerScreen() {
 
   if (!song) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ fontSize: 16 }}>No song selected</Text>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.bg,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ fontSize: 16, color: colors.text }}>No song selected</Text>
       </View>
     );
   }
@@ -49,7 +62,7 @@ export default function PlayerScreen() {
         flex: 1,
         paddingTop: 50,
         paddingHorizontal: 18,
-        backgroundColor: "#fff",
+        backgroundColor: colors.bg,
       }}
     >
       {/* ✅ Header */}
@@ -62,13 +75,13 @@ export default function PlayerScreen() {
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#111" />
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
         </TouchableOpacity>
 
-        <Text style={{ fontWeight: "900" }}>Now Playing</Text>
+        <Text style={{ fontWeight: "900", color: colors.text }}>Now Playing</Text>
 
         <TouchableOpacity onPress={() => navigation.navigate("Queue")}>
-          <Ionicons name="list" size={24} color="#111" />
+          <Ionicons name="list" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -80,7 +93,7 @@ export default function PlayerScreen() {
           height: 330,
           borderRadius: 22,
           marginTop: 10,
-          backgroundColor: "#eee",
+          backgroundColor: isDark ? "#111" : "#eee",
         }}
       />
 
@@ -91,6 +104,7 @@ export default function PlayerScreen() {
           fontWeight: "900",
           marginTop: 18,
           textAlign: "center",
+          color: colors.text,
         }}
         numberOfLines={2}
       >
@@ -98,10 +112,15 @@ export default function PlayerScreen() {
       </Text>
 
       <Text
-        style={{ fontSize: 14, color: "#666", marginTop: 6 }}
+        style={{
+          fontSize: 14,
+          color: colors.subText,
+          marginTop: 6,
+          textAlign: "center",
+        }}
         numberOfLines={1}
       >
-        {song.primaryArtists || "Unknown Artist"}
+        {getArtistName(song)}
       </Text>
 
       {/* ✅ Seekbar */}
@@ -111,22 +130,21 @@ export default function PlayerScreen() {
           minimumValue={0}
           maximumValue={durationMillis || 1}
           onSlidingComplete={(value) => seekTo(value)}
-          minimumTrackTintColor="orange"
-          maximumTrackTintColor="#ddd"
-          thumbTintColor="orange"
+          minimumTrackTintColor={colors.orange}
+          maximumTrackTintColor={isDark ? "#333" : "#ddd"}
+          thumbTintColor={colors.orange}
         />
 
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={{ color: "#666", fontSize: 12 }}>
+          <Text style={{ color: colors.subText, fontSize: 12 }}>
             {formatTime(positionMillis)}
           </Text>
-          <Text style={{ color: "#666", fontSize: 12 }}>
+          <Text style={{ color: colors.subText, fontSize: 12 }}>
             {formatTime(durationMillis)}
           </Text>
         </View>
       </View>
 
-      {/* ✅ Play/Pause */}
       {/* ✅ Controls Row (Figma Style) */}
       <View
         style={{
@@ -149,7 +167,7 @@ export default function PlayerScreen() {
             width: 55,
             height: 55,
             borderRadius: 27.5,
-            backgroundColor: "#111",
+            backgroundColor: isDark ? "#222" : "#111",
             justifyContent: "center",
             alignItems: "center",
             marginHorizontal: 20,
@@ -165,7 +183,7 @@ export default function PlayerScreen() {
             width: 78,
             height: 78,
             borderRadius: 39,
-            backgroundColor: "orange",
+            backgroundColor: colors.orange,
             justifyContent: "center",
             alignItems: "center",
             elevation: 4,
@@ -191,7 +209,7 @@ export default function PlayerScreen() {
             width: 55,
             height: 55,
             borderRadius: 27.5,
-            backgroundColor: "#111",
+            backgroundColor: isDark ? "#222" : "#111",
             justifyContent: "center",
             alignItems: "center",
             marginHorizontal: 20,
@@ -200,6 +218,7 @@ export default function PlayerScreen() {
           <Ionicons name="play-skip-forward" size={22} color="white" />
         </TouchableOpacity>
       </View>
+
       {/* ✅ Bottom small icons row (Figma style) */}
       <View
         style={{
@@ -210,56 +229,35 @@ export default function PlayerScreen() {
           paddingHorizontal: 20,
         }}
       >
-        {/* Shuffle */}
-        <TouchableOpacity
-          onPress={() => {
-            // TODO: implement shuffle later
-            alert("Shuffle (coming soon)");
-          }}
-        >
-          <Ionicons name="shuffle" size={22} color="#111" />
+        <TouchableOpacity onPress={() => alert("Shuffle (coming soon)")}>
+          <Ionicons name="shuffle" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        {/* Timer */}
-        <TouchableOpacity
-          onPress={() => {
-            // TODO: implement sleep timer later
-            alert("Sleep Timer (coming soon)");
-          }}
-        >
-          <Ionicons name="timer-outline" size={22} color="#111" />
+        <TouchableOpacity onPress={() => alert("Sleep Timer (coming soon)")}>
+          <Ionicons name="timer-outline" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        {/* Device / Cast */}
-        <TouchableOpacity
-          onPress={() => {
-            alert("Devices (coming soon)");
-          }}
-        >
-          <Ionicons name="headset-outline" size={22} color="#111" />
+        <TouchableOpacity onPress={() => alert("Devices (coming soon)")}>
+          <Ionicons name="headset-outline" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        {/* More menu */}
-        <TouchableOpacity
-          onPress={() => {
-            alert("More Options (coming soon)");
-          }}
-        >
-          <Ionicons name="ellipsis-vertical" size={22} color="#111" />
+        <TouchableOpacity onPress={() => alert("More Options (coming soon)")}>
+          <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
+
       {/* ✅ Lyrics section */}
       <View
         style={{
           marginTop: 22,
           borderTopWidth: 1,
-          borderTopColor: "#eee",
+          borderTopColor: colors.border,
           paddingTop: 12,
           alignItems: "center",
         }}
       >
-        <Ionicons name="chevron-up" size={22} color="#111" />
-        <Text style={{ fontSize: 14, fontWeight: "800", marginTop: 4 }}>
+        <Ionicons name="chevron-up" size={22} color={colors.text} />
+        <Text style={{ fontSize: 14, fontWeight: "800", marginTop: 4, color: colors.text }}>
           Lyrics
         </Text>
       </View>
