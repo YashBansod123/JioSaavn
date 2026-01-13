@@ -15,17 +15,34 @@ type PlayerState = {
   togglePlayPause: () => Promise<void>;
   stop: () => Promise<void>;
   seekTo: (millis: number) => Promise<void>;
+  dismissMiniPlayer: () => void;
+  isMiniPlayerHidden: boolean;
+hideMiniPlayer: () => void;
+showMiniPlayer: () => void;
+
 };
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentSong: null,
   isPlaying: false,
   sound: null,
+  isMiniPlayerHidden: false,
+  
+
 
   positionMillis: 0,
   durationMillis: 1,
+  
+  dismissMiniPlayer: () => {
+  set({ currentSong: null, isPlaying: false });
+},
+ 
+hideMiniPlayer: () => set({ isMiniPlayerHidden: true }),
+showMiniPlayer: () => set({ isMiniPlayerHidden: false }),
+
 
   playSong: async (song) => {
+    
     try {
       const url = getBestAudioUrl(song);
       if (!url) return;
@@ -77,6 +94,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({
         currentSong: song,
         isPlaying: true,
+        isMiniPlayerHidden: false,
         sound,
         positionMillis: 0,
         durationMillis: 1,

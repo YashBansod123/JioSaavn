@@ -1,36 +1,43 @@
 import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
-import { SaavnSong, getBestImage } from "../api/saavn";
+
+import {
+  SaavnSong,
+  SaavnArtist,
+  getBestImage,
+  getBestArtistImage,
+} from "../api/saavn";
+
+import { useThemeStore } from "../store/themeStore";
+import { themeColors } from "../theme/theme";
 
 type Props = {
   songs: SaavnSong[];
+  artists: SaavnArtist[];
   onPressSong: (song: SaavnSong) => void;
 };
 
-function getUniqueArtists(songs: SaavnSong[]) {
-  const map = new Map<string, { name: string; image: string }>();
+export default function SuggestedHome({ songs, artists, onPressSong }: Props) {
+  const isDark = useThemeStore((s) => s.isDark);
+  const colors = isDark ? themeColors.dark : themeColors.light;
 
-  songs.forEach((s) => {
-    const name = s.primaryArtists || "Unknown Artist";
-    if (!map.has(name)) {
-      map.set(name, { name, image: getBestImage(s) });
-    }
-  });
-
-  return Array.from(map.values()).slice(0, 10);
-}
-
-export default function SuggestedHome({ songs, onPressSong }: Props) {
   const recentlyPlayed = songs.slice(0, 10);
-  const artists = getUniqueArtists(songs);
   const mostPlayed = songs.slice(10, 20);
 
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
       {/* Recently Played */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontSize: 16, fontWeight: "900" }}>Recently Played</Text>
-        <Text style={{ color: "orange", fontWeight: "800" }}>See All</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
+          Recently Played
+        </Text>
+        <Text style={{ color: colors.orange, fontWeight: "800" }}>See All</Text>
       </View>
 
       <FlatList
@@ -41,15 +48,20 @@ export default function SuggestedHome({ songs, onPressSong }: Props) {
         style={{ marginTop: 10 }}
         ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => onPressSong(item)}
-            style={{ width: 120 }}
-          >
+          <TouchableOpacity onPress={() => onPressSong(item)} style={{ width: 120 }}>
             <Image
               source={{ uri: getBestImage(item) }}
-              style={{ width: 120, height: 120, borderRadius: 18, backgroundColor: "#eee" }}
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 18,
+                backgroundColor: isDark ? "#111" : "#eee",
+              }}
             />
-            <Text style={{ marginTop: 6, fontWeight: "800" }} numberOfLines={2}>
+            <Text
+              style={{ marginTop: 6, fontWeight: "800", color: colors.text }}
+              numberOfLines={2}
+            >
               {item.name}
             </Text>
           </TouchableOpacity>
@@ -65,28 +77,43 @@ export default function SuggestedHome({ songs, onPressSong }: Props) {
           marginTop: 22,
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: "900" }}>Artists</Text>
-        <Text style={{ color: "orange", fontWeight: "800" }}>See All</Text>
+        <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
+          Artists
+        </Text>
+        <Text style={{ color: colors.orange, fontWeight: "800" }}>See All</Text>
       </View>
 
       <FlatList
-        data={artists}
+        data={(artists || []).slice(0, 10)}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.name}
+        keyExtractor={(item, idx) => `${item.id}-${idx}`}
         style={{ marginTop: 10 }}
         ItemSeparatorComponent={() => <View style={{ width: 14 }} />}
-        renderItem={({ item }) => (
-          <View style={{ alignItems: "center", width: 90 }}>
-            <Image
-              source={{ uri: item.image }}
-              style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: "#eee" }}
-            />
-            <Text style={{ marginTop: 6, fontWeight: "800" }} numberOfLines={1}>
-              {item.name}
-            </Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const img = getBestArtistImage(item);
+
+          return (
+            <View style={{ alignItems: "center", width: 90 }}>
+              <Image
+                source={{ uri: img }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: isDark ? "#111" : "#eee",
+                }}
+              />
+
+              <Text
+                style={{ marginTop: 6, fontWeight: "800", color: colors.text }}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+            </View>
+          );
+        }}
       />
 
       {/* Most Played */}
@@ -98,8 +125,10 @@ export default function SuggestedHome({ songs, onPressSong }: Props) {
           marginTop: 22,
         }}
       >
-        <Text style={{ fontSize: 16, fontWeight: "900" }}>Most Played</Text>
-        <Text style={{ color: "orange", fontWeight: "800" }}>See All</Text>
+        <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
+          Most Played
+        </Text>
+        <Text style={{ color: colors.orange, fontWeight: "800" }}>See All</Text>
       </View>
 
       <FlatList
@@ -110,15 +139,20 @@ export default function SuggestedHome({ songs, onPressSong }: Props) {
         style={{ marginTop: 10, marginBottom: 120 }}
         ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => onPressSong(item)}
-            style={{ width: 120 }}
-          >
+          <TouchableOpacity onPress={() => onPressSong(item)} style={{ width: 120 }}>
             <Image
               source={{ uri: getBestImage(item) }}
-              style={{ width: 120, height: 120, borderRadius: 18, backgroundColor: "#eee" }}
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 18,
+                backgroundColor: isDark ? "#111" : "#eee",
+              }}
             />
-            <Text style={{ marginTop: 6, fontWeight: "800" }} numberOfLines={2}>
+            <Text
+              style={{ marginTop: 6, fontWeight: "800", color: colors.text }}
+              numberOfLines={2}
+            >
               {item.name}
             </Text>
           </TouchableOpacity>

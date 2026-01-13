@@ -12,17 +12,25 @@ import { Ionicons } from "@expo/vector-icons";
 import SongCard from "../components/SongCard";
 import SuggestedHome from "../components/SuggestedHome";
 
-import { SaavnSong, searchSongs } from "../api/saavn";
 import { usePlayerStore } from "../store/playerStore";
 import { useQueueStore } from "../store/queueStore";
 
 import { useThemeStore } from "../store/themeStore";
 import { themeColors } from "../theme/theme";
 
+import {
+  SaavnSong,
+  SaavnArtist,
+  searchSongs,
+  searchArtists,
+} from "../api/saavn";
+
 export default function HomeScreen({ navigation }: any) {
   const [query, setQuery] = useState("arijit");
   const [songs, setSongs] = useState<SaavnSong[]>([]);
+  const [artists, setArtists] = useState<SaavnArtist[]>([]);
   const [page, setPage] = useState(1);
+
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -61,14 +69,21 @@ export default function HomeScreen({ navigation }: any) {
       if (isLoadMore) setLoadingMore(true);
       else setLoading(true);
 
-      const res = await searchSongs(query, isLoadMore ? page + 1 : 1);
+      const nextPage = isLoadMore ? page + 1 : 1;
+      const res = await searchSongs(query, nextPage);
+
+      // ✅ fetch artists only when fresh search (not pagination)
+      if (!isLoadMore) {
+        const artistRes = await searchArtists(query, 1);
+        setArtists(artistRes?.results || []);
+      }
 
       if (isLoadMore) {
         setSongs((prev) => {
           const merged = [...prev, ...res.results];
           return Array.from(new Map(merged.map((s) => [s.id, s])).values());
         });
-        setPage((p) => p + 1);
+        setPage(nextPage);
       } else {
         const unique = Array.from(
           new Map(res.results.map((s) => [s.id, s])).values()
@@ -77,7 +92,7 @@ export default function HomeScreen({ navigation }: any) {
         setPage(1);
       }
     } catch (err) {
-      console.log(err);
+      console.log("loadSongs error:", err);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -177,6 +192,7 @@ export default function HomeScreen({ navigation }: any) {
       {activeTab === "Suggested" ? (
         <SuggestedHome
           songs={sortedSongs}
+          artists={artists}
           onPressSong={async (song) => {
             const index = sortedSongs.findIndex((s) => s.id === song.id);
             await setQueue(sortedSongs, index);

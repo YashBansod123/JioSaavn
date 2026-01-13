@@ -15,11 +15,14 @@ export default function MiniPlayer() {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const toggle = usePlayerStore((s) => s.togglePlayPause);
 
+  const isMiniPlayerHidden = usePlayerStore((s) => s.isMiniPlayerHidden);
+  const hideMiniPlayer = usePlayerStore((s) => s.hideMiniPlayer);
+
   const isDark = useThemeStore((s) => s.isDark);
   const colors = isDark ? themeColors.dark : themeColors.light;
 
-  // ✅ don’t show mini player if nothing is playing
   if (!song) return null;
+  if (isMiniPlayerHidden) return null;
 
   return (
     <TouchableOpacity
@@ -67,7 +70,25 @@ export default function MiniPlayer() {
         </Text>
       </View>
 
-      {/* ✅ Play Pause Button */}
+      {/* ❌ Close Mini Player */}
+      <TouchableOpacity
+        onPress={(e) => {
+          e.stopPropagation();
+          hideMiniPlayer();
+        }}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          justifyContent: "center",
+          alignItems: "center",
+          marginRight: 8,
+        }}
+      >
+        <Ionicons name="close" size={22} color={colors.subText} />
+      </TouchableOpacity>
+
+      {/* Play/Pause */}
       <TouchableOpacity
         onPress={(e) => {
           e.stopPropagation();

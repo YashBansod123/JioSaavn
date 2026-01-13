@@ -7,6 +7,26 @@ export type SaavnSong = {
   image?: { quality: string; url: string }[];
   downloadUrl?: { quality: string; url: string }[];
 };
+export type SaavnArtist = {
+  id: string;
+  name: string;
+  image?: { link: string }[];
+};
+export function getBestArtistImage(artist: SaavnArtist): string {
+  if (!artist.image || artist.image.length === 0) return "";
+  return artist.image[artist.image.length - 1].link;
+}
+export async function searchArtists(query: string, page = 1) {
+  const url = `https://saavn.sumit.co/api/search/artists?query=${encodeURIComponent(
+    query
+  )}&page=${page}`;
+
+  const res = await fetch(url);
+  const json = await res.json();
+
+  return json.data; // { results, total, ... }
+}
+
 
 export async function searchSongs(query: string, page: number = 1) {
   const url = `${BASE_URL}/search/songs?query=${encodeURIComponent(
